@@ -5,7 +5,9 @@
 #include "framework.h"
 #include "ChatServer.h"
 #include "resource.h"
+#include "iostream"
 #include <string>
+#include <list>
 
 #pragma comment( lib, "ws2_32.lib" )
 
@@ -73,6 +75,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
     char buff[1024];
     char ipAddr[256];
     char name[16];
+    int joinCount = 1;
     int port;
     char portstr[256];
     u_long arg = 0x01;
@@ -83,6 +86,14 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
 
     SOCKADDR_IN toAddr;
     int tolen = sizeof(toAddr);
+
+    //アドレス用のリスト
+    std::list<std::string> add;
+    std::list<std::string>::iterator itrAddr;
+    //ポート用のリスト
+    std::list<std::string> ports;
+    std::list<std::string>::iterator itrPort;
+
 
     switch (msg)
     {
@@ -143,20 +154,53 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
         {
             // 受信データがあれば、チャット欄に追加
 
-            message.append((name));
-            message.append(" : ");
-            message.append((buff));
-            message.append("-- from:");
-            inet_ntop(AF_INET, &fromAddr.sin_addr, ipAddr, sizeof(ipAddr));
-            message.append(ipAddr);
-            message.append(":");
-            sprintf_s(portstr, "%d", ntohs(fromAddr.sin_port));
-            message.append(portstr);
-            message.append("\r\n");
-            SetWindowTextA(hMessageEdit, message.c_str());
+            //message.append((name));
+            //message.append(" : ");
+            //message.append((buff));
+            //message.append("-- from:");
+            //inet_ntop(AF_INET, &fromAddr.sin_addr, ipAddr, sizeof(ipAddr));
+            //message.append(ipAddr);
+            //message.append(":");
+            //sprintf_s(portstr, "%d", ntohs(fromAddr.sin_port));
+            //message.append(portstr);
+            //message.append("\r\n");
+            //SetWindowTextA(hMessageEdit, message.c_str());
+            //SetWindowTextA(hIpAddressEdit, ipAddr);//IPアドレスを送信元から受け取りセットする
+            //SetWindowTextA(hPortEdit, portstr);//	ポート番号	〃
 
-			SetWindowTextA(hIpAddressEdit, ipAddr);//IPアドレスを送信元から受け取りセットする
-			SetWindowTextA(hPortEdit, portstr);//	ポート番号	〃
+            if (joinCount > 0)
+            {
+                message.append((name));
+                message.append("が入室しました");
+                message.append("\r\n");
+                SetWindowTextA(hMessageEdit, message.c_str());
+
+                //リストへの追加
+                for (itrAddr = add.begin(); itrAddr != add.end(); itrAddr++)
+                {
+                    if (*itrAddr != ipAddr)
+                    {
+                        add.push_back(ipAddr);
+                    }
+                }
+                for (itrPort = ports.begin(); itrPort != ports.end(); itrPort++)
+                {
+                    if (*itrPort != portstr)
+                    {
+                        ports.push_back(portstr);
+                    }
+                }
+            }
+            else
+            {
+                message.append((name));
+                message.append(" : ");
+                message.append((buff));
+                message.append("\r\n");
+                SetWindowTextA(hMessageEdit, message.c_str());
+
+
+            }
         }
         return TRUE;
     case WM_COMMAND:
@@ -165,8 +209,6 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
             // 送信ボタン押下時
         case IDC_SENDBUTTON:
             // 送信メッセージを取得
-            GetWindowTextA(hSendMessageEdit, buff, 1024);
-
             GetWindowTextA(hSendMessageEdit, buff, 1024);
 
             // 宛先IPアドレスの取得
