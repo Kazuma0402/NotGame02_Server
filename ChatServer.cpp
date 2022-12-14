@@ -20,6 +20,7 @@ HWND hSendNameEdit;
 const unsigned short SERVERPORT = 8080;
 const UINT_PTR TIMERID = 1000;
 
+
 std::string message;   // チャット欄にセットする文字列
 SOCKET sock;
 
@@ -107,6 +108,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
         // ノンブロッキングソケットに設定
         ioctlsocket(sock, FIONBIO, &arg);
 
+		SetWindowTextA(hIpAddressEdit, "192.168.56.1");
 
         // bind
         SOCKADDR_IN bindAddr;
@@ -140,6 +142,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
         else
         {
             // 受信データがあれば、チャット欄に追加
+
             message.append((name));
             message.append(" : ");
             message.append((buff));
@@ -151,6 +154,9 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
             message.append(portstr);
             message.append("\r\n");
             SetWindowTextA(hMessageEdit, message.c_str());
+
+			SetWindowTextA(hIpAddressEdit, ipAddr);//IPアドレスを送信元から受け取りセットする
+			SetWindowTextA(hPortEdit, portstr);//	ポート番号	〃
         }
         return TRUE;
     case WM_COMMAND:
