@@ -25,10 +25,13 @@ const UINT_PTR TIMERID = 1000;
 
 //変数
 bool join = false;      //入室しているのか
+//リスト
 std::vector<std::string> addr;
+std::vector<std::string> ports;
 
 std::string message;   // チャット欄にセットする文字列
 SOCKET sock;
+SOCKET sock2;
 
 
 // ダイアログプロシージャ
@@ -116,7 +119,8 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
         // ノンブロッキングソケットに設定
         ioctlsocket(sock, FIONBIO, &arg);
 
-		SetWindowTextA(hIpAddressEdit, "192.168.56.1");
+        SetWindowTextA(hIpAddressEdit, "192.168.43.69");
+        SetWindowTextA(hPortEdit, ("8080"));
 
         // bind
         SOCKADDR_IN bindAddr;
@@ -149,9 +153,14 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
         }
         else
         {
+            //参加した人のアドレスとポート番号の変換
             inet_ntop(AF_INET, &fromAddr.sin_addr, ipAddr, sizeof(ipAddr));
+            sprintf_s(portstr, "%d", ntohs(fromAddr.sin_port));
+
             for (int i = 0; i < addr.size(); i++)
             {
+                //新しい人は最後にいるため
+                //addrの途中の人は大丈夫
                 if (addr[i] != ipAddr)
                 {
                     join = false;
@@ -165,8 +174,11 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
 
             if (join == false)
             {
+                //リストの末尾への追加
                 addr.push_back(ipAddr);
+                ports.push_back(portstr);
 
+                //初めての参加のため〇〇が入室しましたと表示
                 message.append(name);
                 message.append("が入室しました");
                 message.append("\r\n");
@@ -179,6 +191,23 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                 message.append(buff);
                 message.append("\r\n");
                 SetWindowTextA(hMessageEdit, message.c_str());
+
+                for (int i = 0; i < addr.size(); i++)
+                {
+                    if (addr[i] != ipAddr)
+                    {
+                        // 宛先のポート番号の取得
+                        port = GetDlgItemInt(hDlg, IDC_PORTEDIT, FALSE, FALSE);
+
+                        memset(&toAddr, 0, sizeof(toAddr));
+                        toAddr.sin_family = AF_INET;
+                        inet_pton(AF_INET, ipAddr, &toAddr.sin_addr.s_addr);
+                        toAddr.sin_port = htons(port);
+                        sendto(sock, buff, sizeof(buff), 0, (SOCKADDR*)&toAddr, tolen);
+                        sendto(sock2, name, sizeof(name), 0, (SOCKADDR*)&toAddr, tolen);
+                    }
+                    
+                }
             }
             
         }
