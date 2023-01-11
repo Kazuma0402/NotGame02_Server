@@ -8,6 +8,7 @@
 #include "iostream"
 #include <string>
 #include <vector>
+#include <regex>
 
 #pragma comment( lib, "ws2_32.lib" )
 
@@ -25,6 +26,7 @@ const UINT_PTR TIMERID = 1000;
 
 //変数
 bool join = false;      //入室しているのか
+
 //リスト
 std::vector<std::string> addr;
 std::vector<std::string> ports;
@@ -82,6 +84,10 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
     char buff[1024];            //文字数
     char ipAddr[256];           //アドレス字数
     char name[16];              //名前の字数
+
+    std::string str;
+    std::regex re("が退出しました");
+    std::smatch m;
 
     int port;
     char portstr[256];
@@ -182,32 +188,48 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                 message.append(name);
                 message.append("が入室しました");
                 message.append("\r\n");
+                //文字の表示
                 SetWindowTextA(hMessageEdit, message.c_str());
             }
             else
             {
-                message.append(name);
-                message.append(":");
-                message.append(buff);
-                message.append("\r\n");
-                SetWindowTextA(hMessageEdit, message.c_str());
+                str = buff;
 
-                for (int i = 0; i < addr.size(); i++)
+                if (std::regex_search(str, m, re))
                 {
-                    if (addr[i] != ipAddr)
-                    {
-                        // 宛先のポート番号の取得
-                        port = GetDlgItemInt(hDlg, IDC_PORTEDIT, FALSE, FALSE);
-
-                        memset(&toAddr, 0, sizeof(toAddr));
-                        toAddr.sin_family = AF_INET;
-                        inet_pton(AF_INET, ipAddr, &toAddr.sin_addr.s_addr);
-                        toAddr.sin_port = htons(port);
-                        sendto(sock, buff, sizeof(buff), 0, (SOCKADDR*)&toAddr, tolen);
-                        sendto(sock2, name, sizeof(name), 0, (SOCKADDR*)&toAddr, tolen);
-                    }
-                    
+                    //初めての参加のため〇〇が入室しましたと表示
+                    message.append(name);
+                    message.append(buff);
+                    message.append("\r\n");
+                    //文字の表示
+                    SetWindowTextA(hMessageEdit, message.c_str());
                 }
+                else
+                {
+                    message.append(name);
+                    message.append(":");
+                    message.append(buff);
+                    message.append("\r\n");
+                    SetWindowTextA(hMessageEdit, message.c_str());
+
+                    for (int i = 0; i < addr.size(); i++)
+                    {
+                        if (addr[i] != ipAddr)
+                        {
+                            // 宛先のポート番号の取得
+                            port = GetDlgItemInt(hDlg, IDC_PORTEDIT, FALSE, FALSE);
+
+                            memset(&toAddr, 0, sizeof(toAddr));
+                            toAddr.sin_family = AF_INET;
+                            inet_pton(AF_INET, ipAddr, &toAddr.sin_addr.s_addr);
+                            toAddr.sin_port = htons(port);
+                            sendto(sock, buff, sizeof(buff), 0, (SOCKADDR*)&toAddr, tolen);
+                            sendto(sock2, name, sizeof(name), 0, (SOCKADDR*)&toAddr, tolen);
+                        }
+
+                    }
+                }
+                
             }
             
         }
