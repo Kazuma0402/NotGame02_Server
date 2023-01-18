@@ -86,7 +86,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
     char name[16];              //名前の字数
 
     std::string str;
-    std::regex re("が退出しました");
+    std::regex re("N0NZ3ypzgRzm");
     std::smatch m;
 
     int port;
@@ -194,12 +194,12 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
             else
             {
                 str = buff;
-
+                //閉じた際に退出したと表示
                 if (std::regex_search(str, m, re))
                 {
-                    //初めての参加のため〇〇が入室しましたと表示
+                    //〇〇が退出しましたと表示
                     message.append(name);
-                    message.append(buff);
+                    message.append("が退出しました");
                     message.append("\r\n");
                     //文字の表示
                     SetWindowTextA(hMessageEdit, message.c_str());
