@@ -203,6 +203,11 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                     message.append("\r\n");
                     //文字の表示
                     SetWindowTextA(hMessageEdit, message.c_str());
+
+                    auto a = std::find(addr.begin(), addr.end(), ipAddr);
+                    addr.erase(a);
+                    auto b = std::find(ports.begin(), ports.end(), portstr);
+                    ports.erase(b);
                 }
                 else
                 {
@@ -216,6 +221,11 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                     {
                         if (addr[i] != ipAddr)
                         {
+                            // 送信メッセージを取得
+                            GetWindowTextA(hSendMessageEdit, buff, 1024);
+
+                            // 宛先IPアドレスの取得
+                            GetWindowTextA(hIpAddressEdit, ipAddr, 256);
                             // 宛先のポート番号の取得
                             port = GetDlgItemInt(hDlg, IDC_PORTEDIT, FALSE, FALSE);
 
@@ -224,7 +234,16 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                             inet_pton(AF_INET, ipAddr, &toAddr.sin_addr.s_addr);
                             toAddr.sin_port = htons(port);
                             sendto(sock, buff, sizeof(buff), 0, (SOCKADDR*)&toAddr, tolen);
-                            sendto(sock2, name, sizeof(name), 0, (SOCKADDR*)&toAddr, tolen);
+
+                            // buffをチャット欄に追加
+                            message.append(buff);
+                            message.append("\r\n");
+
+                            // チャット欄に文字列セット
+                            SetWindowTextA(hMessageEdit, message.c_str());
+
+                            // 送信メッセージ入力欄をクリア
+                            SetWindowTextA(hSendMessageEdit, "");
                         }
 
                     }
