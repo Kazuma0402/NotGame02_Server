@@ -27,9 +27,9 @@ const UINT_PTR TIMERID = 1000;
 //変数
 bool join = false;      //入室しているのか
 
-//リスト
-std::vector<std::string> addr;
-std::vector<std::string> ports;
+//リスト（要素数＝参加最大人数）
+std::vector<std::string> addr(10);
+std::vector<std::string> ports(10);
 
 std::string message;   // チャット欄にセットする文字列
 SOCKET sock;
@@ -125,8 +125,9 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
         // ノンブロッキングソケットに設定
         ioctlsocket(sock, FIONBIO, &arg);
 
-        SetWindowTextA(hIpAddressEdit, "192.168.43.69");
-        SetWindowTextA(hPortEdit, ("8080"));
+        //IPアドレスとポート番号の設定
+        /*SetWindowTextA(hIpAddressEdit, "192.168.43.69");
+        SetWindowTextA(hPortEdit, ("8080"));*/
 
         // bind
         SOCKADDR_IN bindAddr;
@@ -148,6 +149,11 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
         // 受信
         ret = recvfrom(sock, (char*)buff, sizeof(buff), 0, (SOCKADDR*)&fromAddr, &fromlen);
         ret2 = recvfrom(sock, (char*)name, sizeof(name), 0, (SOCKADDR*)&fromAddr, &fromlen);
+
+        //参加した人のアドレスとポート番号の変換
+        inet_ntop(AF_INET, &fromAddr.sin_addr, ipAddr, sizeof(ipAddr));
+        sprintf_s(portstr, "%d", ntohs(fromAddr.sin_port));
+
         if (ret < 0 || ret2 < 0)
         {
             if (WSAGetLastError() != WSAEWOULDBLOCK)
@@ -159,10 +165,6 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
         }
         else
         {
-            //参加した人のアドレスとポート番号の変換
-            inet_ntop(AF_INET, &fromAddr.sin_addr, ipAddr, sizeof(ipAddr));
-            sprintf_s(portstr, "%d", ntohs(fromAddr.sin_port));
-
             for (int i = 0; i < addr.size(); i++)
             {
                 //新しい人は最後にいるため
@@ -188,8 +190,13 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                 message.append(name);
                 message.append("が入室しました");
                 message.append("\r\n");
+
                 //文字の表示
                 SetWindowTextA(hMessageEdit, message.c_str());
+
+                //入室してきた人のIPアドレスとポート番号を表示
+                SetWindowTextA(hIpAddressEdit, ipAddr);
+                SetWindowTextA(hPortEdit, portstr);
             }
             else
             {
@@ -204,10 +211,11 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                     //文字の表示
                     SetWindowTextA(hMessageEdit, message.c_str());
 
-                    auto a = std::find(addr.begin(), addr.end(), ipAddr);
-                    addr.erase(a);
-                    auto b = std::find(ports.begin(), ports.end(), portstr);
-                    ports.erase(b);
+                    //退出した人のアドレスとポート番号の削除
+                    auto Address = std::find(addr.begin(), addr.end(), ipAddr);
+                    addr.erase(Address);
+                    auto PortNumber = std::find(ports.begin(), ports.end(), portstr);
+                    ports.erase(PortNumber);
                 }
                 else
                 {
