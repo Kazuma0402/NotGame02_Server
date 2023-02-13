@@ -83,6 +83,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
 {
     char buff[1024];            //文字数
     char ipAddr[256];           //アドレス字数
+    char sendIpAddr[256];       //返信先アドレス
     char name[16];              //名前の字数
 
     std::string str;
@@ -125,10 +126,6 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
         // ノンブロッキングソケットに設定
         ioctlsocket(sock, FIONBIO, &arg);
 
-        //IPアドレスとポート番号の設定
-        /*SetWindowTextA(hIpAddressEdit, "192.168.43.69");
-        SetWindowTextA(hPortEdit, ("8080"));*/
-
         // bind
         SOCKADDR_IN bindAddr;
         memset(&bindAddr, 0, sizeof(bindAddr));
@@ -165,6 +162,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
         }
         else
         {
+            //配列内の全部を確認する
             for (int i = 0; i < addr.size(); i++)
             {
                 //新しい人は最後にいるため
@@ -180,6 +178,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                 }
             }
 
+            //もし一回も入ったことのない人だったら
             if (join == false)
             {
                 //リストの末尾への追加
@@ -201,7 +200,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
             else
             {
                 str = buff;
-                //閉じた際に退出したと表示
+                //文字検索
                 if (std::regex_search(str, m, re))
                 {
                     //〇〇が退出しましたと表示
@@ -219,39 +218,30 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                 }
                 else
                 {
+                    //↓送信されてきたメッセージを表示する
                     message.append(name);
                     message.append(":");
                     message.append(buff);
                     message.append("\r\n");
+                    //メッセージを画面に表示
                     SetWindowTextA(hMessageEdit, message.c_str());
 
                     for (int i = 0; i < addr.size(); i++)
                     {
                         if (addr[i] != ipAddr)
                         {
-                            // 送信メッセージを取得
-                            GetWindowTextA(hSendMessageEdit, buff, 1024);
-
-                            // 宛先IPアドレスの取得
-                            GetWindowTextA(hIpAddressEdit, ipAddr, 256);
+                            // IPアドレスの取得
+                            sendIpAddr == addr[i];
                             // 宛先のポート番号の取得
-                            port = GetDlgItemInt(hDlg, IDC_PORTEDIT, FALSE, FALSE);
+                            std::string pStr = ports[i];        //配列の文字列を変数に入れる
+                            int pStr2 = atoi(pStr.c_str());     //入れた変数を整数に変換してintの変数に入れる
+                            port = pStr2;
 
                             memset(&toAddr, 0, sizeof(toAddr));
                             toAddr.sin_family = AF_INET;
-                            inet_pton(AF_INET, ipAddr, &toAddr.sin_addr.s_addr);
+                            inet_pton(AF_INET, sendIpAddr, &toAddr.sin_addr.s_addr);
                             toAddr.sin_port = htons(port);
                             sendto(sock, buff, sizeof(buff), 0, (SOCKADDR*)&toAddr, tolen);
-
-                            // buffをチャット欄に追加
-                            message.append(buff);
-                            message.append("\r\n");
-
-                            // チャット欄に文字列セット
-                            SetWindowTextA(hMessageEdit, message.c_str());
-
-                            // 送信メッセージ入力欄をクリア
-                            SetWindowTextA(hSendMessageEdit, "");
                         }
 
                     }
