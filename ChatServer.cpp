@@ -33,7 +33,6 @@ std::vector<std::string> ports(10);
 
 std::string message;   // チャット欄にセットする文字列
 SOCKET sock;
-SOCKET sock2;
 
 
 // ダイアログプロシージャ
@@ -90,7 +89,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
     std::regex re("N0NZ3ypzgRzm");
     std::smatch m;
 
-    int port;
+    u_short port;
     char portstr[256];
     u_long arg = 0x01;
 
@@ -186,8 +185,9 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                 ports.push_back(portstr);
 
                 //初めての参加のため〇〇が入室しましたと表示
+                char buff[1024] = "が入室しました";
                 message.append(name);
-                message.append("が入室しました");
+                message.append(buff);
                 message.append("\r\n");
 
                 //文字の表示
@@ -210,6 +210,29 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                     //文字の表示
                     SetWindowTextA(hMessageEdit, message.c_str());
 
+                    for (int i = 0; i < addr.size(); i++)
+                    {
+                        if (addr[i] != ipAddr)
+                        {
+                            // IPアドレスの取得
+                            std::string addressStr = addr[i];
+                            if (addressStr.size() < 16)
+                            {
+                                std::char_traits<char>::copy(sendIpAddr, addressStr.c_str(), addressStr.size() + 1);
+                            }
+                            // 宛先のポート番号の取得
+                            std::string pStr = ports[i];        //配列の文字列を変数に入れる
+                            port = atoi(pStr.c_str());     //入れた変数を整数に変換してintの変数に入れる
+
+                            memset(&toAddr, 0, sizeof(toAddr));
+                            toAddr.sin_family = AF_INET;
+                            inet_pton(AF_INET, sendIpAddr, &toAddr.sin_addr.s_addr);
+                            toAddr.sin_port = htons(port);
+                            ret = sendto(sock, buff, sizeof(buff), 0, (SOCKADDR*)&toAddr, tolen);
+                            ret2 = sendto(sock, name, sizeof(name), 0, (SOCKADDR*)&toAddr, tolen);
+                        }
+                    }
+
                     //退出した人のアドレスとポート番号の削除
                     auto Address = std::find(addr.begin(), addr.end(), ipAddr);
                     addr.erase(Address);
@@ -223,7 +246,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                     message.append(":");
                     message.append(buff);
                     message.append("\r\n");
-                    //メッセージを画面に表示
+                    //チャット欄に文字列セット
                     SetWindowTextA(hMessageEdit, message.c_str());
 
                     for (int i = 0; i < addr.size(); i++)
@@ -231,19 +254,22 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                         if (addr[i] != ipAddr)
                         {
                             // IPアドレスの取得
-                            sendIpAddr == addr[i];
+                            std::string addressStr = addr[i];
+                            if (addressStr.size() < 16)
+                            {
+                                std::char_traits<char>::copy(sendIpAddr, addressStr.c_str(), addressStr.size() + 1);
+                            }
                             // 宛先のポート番号の取得
                             std::string pStr = ports[i];        //配列の文字列を変数に入れる
-                            int pStr2 = atoi(pStr.c_str());     //入れた変数を整数に変換してintの変数に入れる
-                            port = pStr2;
-
+                            port = atoi(pStr.c_str());     //入れた変数を整数に変換してintの変数に入れる
+                     
                             memset(&toAddr, 0, sizeof(toAddr));
                             toAddr.sin_family = AF_INET;
                             inet_pton(AF_INET, sendIpAddr, &toAddr.sin_addr.s_addr);
                             toAddr.sin_port = htons(port);
-                            sendto(sock, buff, sizeof(buff), 0, (SOCKADDR*)&toAddr, tolen);
+                            ret = sendto(sock, buff, sizeof(buff), 0, (SOCKADDR*)&toAddr, tolen);
+                            ret2 = sendto(sock, name, sizeof(name), 0, (SOCKADDR*)&toAddr, tolen);
                         }
-
                     }
                 }
                 
