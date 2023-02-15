@@ -185,10 +185,33 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp)
                 ports.push_back(portstr);
 
                 //初めての参加のため〇〇が入室しましたと表示
-                char buff[1024] = "が入室しました";
                 message.append(name);
-                message.append(buff);
+                message.append("が入室しました");
                 message.append("\r\n");
+
+                char buff[1024] = "ADRcsTswm20Okl";
+                for (int i = 0; i < addr.size(); i++)
+                {
+                    if (addr[i] == ipAddr)
+                    {
+                        // IPアドレスの取得
+                        std::string addressStr = addr[i];
+                        if (addressStr.size() < 16)
+                        {
+                            std::char_traits<char>::copy(sendIpAddr, addressStr.c_str(), addressStr.size() + 1);
+                        }
+                        // 宛先のポート番号の取得
+                        std::string pStr = ports[i];        //配列の文字列を変数に入れる
+                        port = atoi(pStr.c_str());     //入れた変数を整数に変換してintの変数に入れる
+
+                        memset(&toAddr, 0, sizeof(toAddr));
+                        toAddr.sin_family = AF_INET;
+                        inet_pton(AF_INET, sendIpAddr, &toAddr.sin_addr.s_addr);
+                        toAddr.sin_port = htons(port);
+                        ret = sendto(sock, buff, sizeof(buff), 0, (SOCKADDR*)&toAddr, tolen);
+                        ret2 = sendto(sock, name, sizeof(name), 0, (SOCKADDR*)&toAddr, tolen);
+                    }
+                }
 
                 //文字の表示
                 SetWindowTextA(hMessageEdit, message.c_str());
